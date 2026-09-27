@@ -25,8 +25,8 @@ vector database for semantic search.
 
 ```
 recommend.py            Embeds the films; exports the RAG data (metadata/movies_rag.jsonl)
-load_chroma.py          Builds the vector index and searches (OpenAI embeddings)
-chat.py                 Full RAG chat: retrieval + an LLM-written answer
+load_chroma.py          Search using OpenAI embeddings (needs a key, sharper results)
+chat.py                 Full RAG chat: retrieval + an LLM-written answer (needs keys)
 enrich_films.py         Adds the mood metadata to the source films (already done)
 grab_movie_api/
   tmdb_to_rag_metadata.py   Fetches raw film data from TMDB
@@ -47,73 +47,19 @@ Requires Python 3.10+.
 pip install chromadb python-dotenv numpy requests
 ```
 
-### Add your API keys
+## How to run it:
 
-SceneHawk uses two keys — one to embed queries, one to write the answer:
+1. In PowerShell:
+   - git clone https://github.com/notLogi/SceneHawk-CS499.git
+   - cd SceneHawk-CS499
+3. Install the following dependencies:
+   - pip install chromadb python-dotenv numpy requests
+4. Copy the template and add your own keys in the .env.example:
+   - EMBED_API_KEY=sk-proj-your-openai-key
+     REQUESTY_API_KEY=rqsty-sk-your-requesty-key
+5. Run the chat:
+   - python chat.py "something cozy for a rainy sunday"
+   - python chat.py                          # interactive loop; blank line to quit
 
-- `EMBED_API_KEY` — OpenAI key, embeds each query for the vector search.
-- `REQUESTY_API_KEY` — Requesty key, generates the written recommendation.
 
-Copy the template and fill both in:
 
-```bash
-cp .env.example config/.env
-```
-
-Then edit `config/.env`:
-
-```
-EMBED_API_KEY=sk-proj-your-openai-key
-REQUESTY_API_KEY=rqsty-sk-your-requesty-key
-```
-
-## Running it
-
-### 1. Build the vector index (one time)
-
-```bash
-python load_chroma.py
-```
-
-### 2. Search — ranked films only
-
-```bash
-python load_chroma.py --query "a slow sad film about grief"
-python load_chroma.py --query "a heist movie"
-```
-
-### 3. Full chat — an LLM-written recommendation
-
-```bash
-python chat.py "something cozy for a rainy sunday"
-python chat.py                          # interactive loop; blank line to quit
-```
-
-## Regenerating the data (optional)
-
-The dataset is already built and committed, so you don't need to do this. But
-to refresh it:
-
-```bash
-# 1. fetch films (needs a TMDB_API_KEY)
-python grab_movie_api/tmdb_to_rag_metadata.py
-python grab_movie_api/tmdb_to_rag_metadata.py --underrated
-
-# 2. enrich with mood metadata (needs REQUESTY_API_KEY)
-python enrich_films.py metadata/movies_metadata.json metadata/movies_metadata.json
-
-# 3. re-embed into the RAG dataset (needs EMBED_API_KEY)
-python recommend.py export-rag
-
-# 4. rebuild the vector index
-python load_chroma.py
-```
-
-## Notes
-
-- **Never commit your keys.** `config/.env` is gitignored; only `.env.example`
-  (with placeholders) is shared.
-- The mood fields are *inferred from synopses*, not ground truth — they reflect
-  what a plot summary implies a film feels like.
-- Query embedding costs a fraction of a cent per search; the films are embedded
-  once (already done and committed in `metadata/movies_rag.jsonl`).
