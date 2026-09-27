@@ -25,9 +25,8 @@ vector database for semantic search.
 
 ```
 recommend.py            Embeds the films; exports the RAG data (metadata/movies_rag.jsonl)
-local_rag.py            Keyless search — Chroma's built-in local embedding model (no API key)
-load_chroma.py          Search using OpenAI embeddings (needs a key, sharper results)
-chat.py                 Full RAG chat: retrieval + an LLM-written answer (needs keys)
+load_chroma.py          Builds the vector index and searches (OpenAI embeddings)
+chat.py                 Full RAG chat: retrieval + an LLM-written answer
 enrich_films.py         Adds the mood metadata to the source films (already done)
 grab_movie_api/
   tmdb_to_rag_metadata.py   Fetches raw film data from TMDB
@@ -48,39 +47,42 @@ Requires Python 3.10+.
 pip install chromadb python-dotenv numpy requests
 ```
 
-## Running it
+### Add your API keys
 
-### Option A — fully local, no API key (easiest)
+SceneHawk uses two keys — one to embed queries, one to write the answer:
 
-Uses a small embedding model that runs on your own machine. Free, offline,
-nothing to configure.
+- `EMBED_API_KEY` — OpenAI key, embeds each query for the vector search.
+- `REQUESTY_API_KEY` — Requesty key, generates the written recommendation.
+
+Copy the template and fill both in:
 
 ```bash
-python local_rag.py build              # one time: builds the local index
-python local_rag.py "something cozy for a rainy sunday"
-python local_rag.py "a heist movie" -k 8
+cp .env.example config/.env
 ```
 
-### Option B — OpenAI embeddings (sharper results, needs a key)
+Then edit `config/.env`:
 
-1. Copy the template and add your keys:
-   ```bash
-   cp .env.example config/.env
-   ```
-   Then edit `config/.env`:
-   ```
-   EMBED_API_KEY=sk-proj-your-openai-key
-   REQUESTY_API_KEY=rqsty-sk-your-requesty-key
-   ```
-2. Build the OpenAI-vector index and search:
-   ```bash
-   python load_chroma.py                          # build the index
-   python load_chroma.py --query "a slow sad film about grief"
-   ```
+```
+EMBED_API_KEY=sk-proj-your-openai-key
+REQUESTY_API_KEY=rqsty-sk-your-requesty-key
+```
 
-### Option C — full chat (retrieval + an LLM-written recommendation)
+## Running it
 
-Needs both keys in `config/.env` (as above).
+### 1. Build the vector index (one time)
+
+```bash
+python load_chroma.py
+```
+
+### 2. Search — ranked films only
+
+```bash
+python load_chroma.py --query "a slow sad film about grief"
+python load_chroma.py --query "a heist movie"
+```
+
+### 3. Full chat — an LLM-written recommendation
 
 ```bash
 python chat.py "something cozy for a rainy sunday"
@@ -103,8 +105,8 @@ python enrich_films.py metadata/movies_metadata.json metadata/movies_metadata.js
 # 3. re-embed into the RAG dataset (needs EMBED_API_KEY)
 python recommend.py export-rag
 
-# 4. rebuild whichever index you use
-python local_rag.py build      # or: python load_chroma.py
+# 4. rebuild the vector index
+python load_chroma.py
 ```
 
 ## Notes
@@ -113,5 +115,5 @@ python local_rag.py build      # or: python load_chroma.py
   (with placeholders) is shared.
 - The mood fields are *inferred from synopses*, not ground truth — they reflect
   what a plot summary implies a film feels like.
-- Local vs. OpenAI embeddings: the local model is free and private but coarser
-  on subtle moods; OpenAI's is sharper but costs a fraction of a cent per query.
+- Query embedding costs a fraction of a cent per search; the films are embedded
+  once (already done and committed in `metadata/movies_rag.jsonl`).
