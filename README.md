@@ -57,7 +57,8 @@ pip install chromadb python-dotenv numpy requests
 4. Copy the template and add your own keys in the .env.example:
    - EMBED_API_KEY=sk-proj-your-openai-key
      REQUESTY_API_KEY=rqsty-sk-your-requesty-key
-5. Run the chat:
+5. Run load_chroma.py
+6. Run the chat:
    - python chat.py "something cozy for a rainy sunday"
    - python chat.py                          # interactive loop; blank line to quit
 
