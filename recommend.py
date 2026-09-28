@@ -45,7 +45,7 @@ import requests
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parent
-load_dotenv(ROOT / "config" / ".env", override=True)  # config/.env wins over any stale shell env vars
+load_dotenv(ROOT / ".env", override=True)  # config/.env wins over any stale shell env vars
 
 SOURCES = {  # pool name -> enriched JSON
     "popular": str(ROOT / "metadata" / "movies_metadata.json"),
