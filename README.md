@@ -24,19 +24,20 @@ vector database for semantic search.
 ## Project layout
 
 ```
-recommend.py            Embeds the films; exports the RAG data (metadata/movies_rag.jsonl)
-load_chroma.py          Search using OpenAI embeddings (needs a key, sharper results)
-chat.py                 Full RAG chat: retrieval + an LLM-written answer (needs keys)
-enrich_films.py         Adds the mood metadata to the source films (already done)
-grab_movie_api/
+src/
+  recommend.py              Embeds the films; exports the RAG data (data/movies_rag.jsonl)
+  load_chroma.py            Builds the Chroma index from the exported JSONL (no API key needed)
+  chat.py                   Full RAG chat: retrieval + an LLM-written answer (needs keys)
+  server.py                 HTTP API wrapper around the chat retrieval + generation
+  enrich_films.py           Adds the mood metadata to the source films (already done)
   tmdb_to_rag_metadata.py   Fetches raw film data from TMDB
-metadata/
+data/
   movies_metadata.json      500 popular films (enriched)
   movies_underrated.json    500 underrated films (enriched)
   movies_rag.jsonl          The built dataset the recommender queries
-config/
-  .env                      Your API keys (gitignored — never committed)
-.env.example                Template: copy to config/.env and add your keys
+chroma_db/                  Local vector index (gitignored — build it with load_chroma.py)
+.env                        Your API keys (gitignored — never committed)
+.env.example                Template: copy to .env and add your keys
 ```
 
 ## Setup
@@ -54,13 +55,15 @@ pip install chromadb python-dotenv numpy requests
    - cd SceneHawk-CS499
 3. Install the following dependencies:
    - pip install chromadb python-dotenv numpy requests
-4. Copy the template and add your own keys in the .env.example:
+4. Copy the template to `.env` and add your own keys:
+   - cp .env.example .env
    - EMBED_API_KEY=sk-proj-your-openai-key
      REQUESTY_API_KEY=rqsty-sk-your-requesty-key
-5. Run load_chroma.py
+5. Build the vector index (reads data/movies_rag.jsonl; no API key needed):
+   - python src/load_chroma.py
 6. Run the chat:
-   - python chat.py "something cozy for a rainy sunday"
-   - python chat.py                          # interactive loop; blank line to quit
+   - python src/chat.py "something cozy for a rainy sunday"
+   - python src/chat.py                      # interactive loop; blank line to quit
 
 
 

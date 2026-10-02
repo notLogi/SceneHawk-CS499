@@ -27,9 +27,9 @@ from pathlib import Path
 import chromadb
 import requests
 
-from recommend import embed  # same embedding config used to build chroma_db (also loads config/.env)
+from recommend import embed  # same embedding config used to build chroma_db (also loads .env)
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent  # project root (src/ is one level down)
 ROUTER_URL = "https://router.requesty.ai/v1/chat/completions"
 CHAT_MODEL = os.environ.get("REQUESTY_CHAT_MODEL", "google/gemma-4-31b-it")
 DB_DIR = str(ROOT / "chroma_db")
@@ -40,9 +40,18 @@ request and a CONTEXT list of candidate films retrieved from a mood-aware search
 (each with title, year, rating, pacing, an inferred mood summary, and a short synopsis).
 
 Recommend only films that appear in CONTEXT - never invent a film that isn't listed. \
-Pick the best 2-4 matches, and for each one explain briefly why it fits the request, \
-referencing its mood/pacing/plot. If nothing in CONTEXT fits well, say so honestly \
-instead of forcing a recommendation."""
+Pick the best 2-4 matches, ranked best first.
+
+Output plain text only - NO Markdown, no asterisks, no bold. This is read in a \
+terminal, so formatting characters show up as literal symbols. Format each pick \
+as a numbered entry laid out exactly like this:
+
+1. Title (Year)  -  rating stars, pacing
+   Why it fits: one or two sentences referencing its mood, pacing, and plot.
+
+Leave a blank line between entries. Start with a single short intro line (e.g. \
+"Here are the best matches for a tense heist:"). If nothing in CONTEXT fits well, \
+say so honestly in one line instead of forcing a recommendation."""
 
 
 def retrieve(query: str, k: int) -> list[dict]:
@@ -78,7 +87,7 @@ def ask_llm(query: str, context: str) -> str:
         headers={"Authorization": f"Bearer {api_key}"},
         json={
             "model": CHAT_MODEL,
-            "max_tokens": 1000,
+            "max_tokens": 3000,  # gemma-4-31b-it is a reasoning model; budget must cover hidden reasoning tokens + the answer
             "temperature": 0.7,
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
